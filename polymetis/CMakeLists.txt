@@ -184,6 +184,7 @@ if(BUILD_ALLEGRO)
       gtest
       gtest_main
     )
+
   endif()
 endif()
 
@@ -218,6 +219,24 @@ if(BUILD_FRANKA)
     yaml-cpp
     spdlog::spdlog
   )
+
+  target_include_directories(franka_panda_client PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}
+    $ENV{CONDA_PREFIX}/include/
+    ${EIGEN3_INCLUDE_DIR}
+
+  )
+    
+  target_include_directories(franka_hand_client PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${CMAKE_CURRENT_BINARY_DIR}
+      $ENV{CONDA_PREFIX}/include/
+      ${EIGEN3_INCLUDE_DIR}
+
+  )
+
+
 endif()
 
 
