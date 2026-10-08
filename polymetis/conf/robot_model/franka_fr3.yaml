@@ -1,4 +1,3 @@
-# @package _group_
 # FR3: Panda geometry (same link lengths), FR3 joint limits.
 robot_description_path: "franka_panda/panda_arm.urdf"
 controlled_joints:  [0, 1, 2, 3, 4, 5, 6]
