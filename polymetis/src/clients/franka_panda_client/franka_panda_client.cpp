@@ -30,18 +30,18 @@ FrankaTorqueControlClient::FrankaTorqueControlClient(
 
   // Load robot client metadata
   std::ifstream file(robot_client_metadata_path);
-  assert(file);
+  if (!file) throw std::runtime_error("cannot open robot client metadata: " + robot_client_metadata_path);
   std::stringstream buffer;
   buffer << file.rdbuf();
   file.close();
   RobotClientMetadata metadata;
-  assert(metadata.ParseFromString(buffer.str()));
+  if (!metadata.ParseFromString(buffer.str())) throw std::runtime_error("failed to parse robot client metadata");
 
   // Initialize robot client with metadata
   ClientContext context;
   Empty empty;
   Status status = stub_->InitRobotClient(&context, metadata, &empty);
-  assert(status.ok());
+  if (!status.ok()) throw std::runtime_error("InitRobotClient failed: " + status.error_message());
 
   // Connect to robot
   mock_franka_ = config["mock"].as<bool>();
@@ -191,13 +191,16 @@ void FrankaTorqueControlClient::run() {
     franka::RobotState robot_state;
     franka::Duration duration;
 
-    int period = 1.0 / FRANKA_HZ;
-    int period_ns = period * 1.0e9;
+    long period_ns = static_cast<long>(1.0e9 / FRANKA_HZ);  // was int 0: mock ran unthrottled
 
     struct timespec abs_target_time;
     while (true) {
       clock_gettime(CLOCK_REALTIME, &abs_target_time);
       abs_target_time.tv_nsec += period_ns;
+      if (abs_target_time.tv_nsec >= 1000000000L) {
+        abs_target_time.tv_nsec -= 1000000000L;
+        abs_target_time.tv_sec += 1;
+      }
 
       // Pull data from robot if in readonly mode
       if (readonly_mode_) {

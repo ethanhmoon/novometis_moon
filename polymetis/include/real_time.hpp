@@ -56,7 +56,7 @@ int create_real_time_thread(void *(*start_routine)(void *), void *arg = NULL) {
   printf("Using %d as cpu_dma_latency\n", cpu_dma_latency);
 
   /* Disable sbrk */
-  ret = mallopt(M_TRIM_THRESHOLD, 0);
+  ret = 1; /* mallopt(M_TRIM_THRESHOLD) removed: starved gRPC allocations (abort in gpr_malloc) */
   if (ret != 1) {
     printf("failed to disable sbrk\n");
     goto out;
@@ -64,7 +64,7 @@ int create_real_time_thread(void *(*start_routine)(void *), void *arg = NULL) {
   printf("Disabled sbrk...\n");
 
   /* Disable mmap */
-  ret = mallopt(M_MMAP_MAX, 1);
+  ret = 1; /* mallopt(M_MMAP_MAX) removed: same reason; mlockall below still locks memory */
   if (ret != 1) {
     printf("failed to disable mmap\n");
     goto out;
@@ -74,7 +74,7 @@ int create_real_time_thread(void *(*start_routine)(void *), void *arg = NULL) {
   write_cpu_dma_latency(cpu_dma_latency);
 
   /* Lock memory */
-  if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
+  if (mlockall(MCL_CURRENT)  /* MCL_FUTURE made gRPC allocations fail */) {
     printf("mlockall failed: %m\n");
     goto out;
   }

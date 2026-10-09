@@ -146,6 +146,7 @@ Status
 PolymetisControllerServerImpl::ControlUpdate(ServerContext *context,
                                              const RobotState *robot_state,
                                              TorqueCommand *torque_command) {
+  try {
   // Check if last update is stale
   if (!validRobotContext()) {
     spdlog::warn("Interrupted control update greater than threshold of {} ns. "
@@ -232,6 +233,14 @@ PolymetisControllerServerImpl::ControlUpdate(ServerContext *context,
   robot_client_context_.last_update_ns = getNanoseconds();
 
   return Status::OK;
+  } catch (const std::exception &e) {
+    std::string msg = std::string("ControlUpdate threw: ") + e.what();
+    spdlog::error(msg);
+    return Status(StatusCode::INTERNAL, msg);
+  } catch (...) {
+    spdlog::error("ControlUpdate threw a non-std exception");
+    return Status(StatusCode::INTERNAL, "ControlUpdate threw a non-std exception");
+  }
 }
 
 Status PolymetisControllerServerImpl::SetController(
